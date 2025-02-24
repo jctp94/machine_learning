@@ -10,19 +10,21 @@ from GraphicDebugger import GraphicDebugger
 
 def divide_by_groups(D_train, k):
  
-    por_grupo = D_train.shape[0] // k
-    sobrante = D_train.shape[0] % k
+    group_size = D_train.shape[0] // k
+    remainder = D_train.shape[0] % k
  
-    grupos = []
-    indice = 0
+    groups = []
+    index = 0
  
     for i in range(k):
-        agregar = por_grupo + 1 if sobrante > 0 else por_grupo
-        grupos.append(D_train[indice:indice + agregar])
-        indice += agregar
-        sobrante -= 1
+        add_size = group_size + 1 if remainder > 0 else group_size
+        groups.append([index, index + add_size -1])
+        index += add_size
+        remainder -= 1
 
-    return grupos
+    return groups
+# end divide_by_groups
+
 # -- Parse command line arguments
 parser = argparse.ArgumentParser(
     prog = sys.argv[ 0 ],
@@ -117,12 +119,18 @@ elif args.debugger.lower( ) == 'graphic':
 if args.validation.lower( ) == 'mce':
   opt.fit( D_tr, D_te )
 elif args.validation.lower( ) == 'loo':
-  for row in D_tr[0].shape[0]:
-    opt.fit(D_tr[0][:row], D_tr[0][row])
-  pass
+  for i in range(D_tr[0].shape[0]):
+    train_data = numpy.delete(D_tr[0], i, axis=0)
+    test_data = D_tr[0][i]
+    opt.fit(train_data, test_data)
 elif args.validation.lower( )[ : 5 ] == 'kfold':
   K = int( args.validation.lower( )[ 5 : ] ) 
-  grupos = divide_by_groups(D_tr[0], K)
+  row_groups = divide_by_groups(D_tr[0], K)
+  for idx, rows_to_remove in enumerate(row_groups):
+    train_data = numpy.delete(D_tr[0], rows_to_remove, axis=0)
+    test_data = D_tr[0][rows_to_remove]
+    opt.fit(train_data, test_data)
+
   for i in range(0, D_tr[0].shape[0], K):
     opt.fit(D_tr[0][0:i] + D_tr[0][i+K:], D_tr[0][i])
   pass
