@@ -8,6 +8,21 @@ import PUJ_ML
 from SimpleDebugger import SimpleDebugger
 from GraphicDebugger import GraphicDebugger
 
+def divide_by_groups(D_train, k):
+ 
+    por_grupo = D_train.shape[0] // k
+    sobrante = D_train.shape[0] % k
+ 
+    grupos = []
+    indice = 0
+ 
+    for i in range(k):
+        agregar = por_grupo + 1 if sobrante > 0 else por_grupo
+        grupos.append(D_train[indice:indice + agregar])
+        indice += agregar
+        sobrante -= 1
+
+    return grupos
 # -- Parse command line arguments
 parser = argparse.ArgumentParser(
     prog = sys.argv[ 0 ],
@@ -102,9 +117,14 @@ elif args.debugger.lower( ) == 'graphic':
 if args.validation.lower( ) == 'mce':
   opt.fit( D_tr, D_te )
 elif args.validation.lower( ) == 'loo':
+  for row in D_tr[0].shape[0]:
+    opt.fit(D_tr[0][:row], D_tr[0][row])
   pass
 elif args.validation.lower( )[ : 5 ] == 'kfold':
-  K = int( args.validation.lower( )[ 5 : ] )
+  K = int( args.validation.lower( )[ 5 : ] ) 
+  grupos = divide_by_groups(D_tr[0], K)
+  for i in range(0, D_tr[0].shape[0], K):
+    opt.fit(D_tr[0][0:i] + D_tr[0][i+K:], D_tr[0][i])
   pass
 else:
   print( 'Invalid validation strategy.' )
@@ -141,5 +161,7 @@ if not D_te[ 0 ] is None and not D_te[ 1 ] is None:
 ax.plot( [ 0, 1 ], [ 0, 1 ], lw = 0.5, linestyle = '--' )
 ax.set_aspect( 1 )
 matplotlib.pyplot.show( )
+
+
 
 ## eof - LogisticRegressionFit.py
