@@ -47,12 +47,14 @@ parser.add_argument(
   )
 parser.add_argument(
   '-v', '--validation', type = str, default = 'MCE',
-  help = 'MCE|LOO|KfoldK'
+  help = 'MCE|LOO|Kfold'
   )
 parser.add_argument( '-a', '--alpha', type = float, default = 1e-2 )
 parser.add_argument( '-L1', '--L1', type = float, default = 0 )
 parser.add_argument( '-L2', '--L2', type = float, default = 0 )
 parser.add_argument( '-e', '--epochs', type = int, default = 1000 )
+parser.add_argument( '-k', '--k', type = int, default = 5 )
+
 try:
   args = parser.parse_args( )
 except BaseException as error:
@@ -117,23 +119,28 @@ elif args.debugger.lower( ) == 'graphic':
 
 # -- Fit model to train data
 if args.validation.lower( ) == 'mce':
+  print("D_tr", D_tr)
+  print("D_te", D_te)
   opt.fit( D_tr, D_te )
+  print("type D_te", type(D_te))
+  print("type D_te[0]", type(D_te[0]))
+  print("type D_te[1]", type(D_te[1]))
+  print("fit finished")
 elif args.validation.lower( ) == 'loo':
   for i in range(D_tr[0].shape[0]):
-    train_data = numpy.delete(D_tr[0], i, axis=0)
-    test_data = D_tr[0][i]
+    train_data = (numpy.delete(D_tr[0], i, axis=0),
+                  numpy.delete(D_tr[1], i, axis=0))
+
+    test_data = (D_tr[0][i],D_tr[1][i])
     opt.fit(train_data, test_data)
 elif args.validation.lower( )[ : 5 ] == 'kfold':
-  K = int( args.validation.lower( )[ 5 : ] ) 
+  K = int( args.k ) 
   row_groups = divide_by_groups(D_tr[0], K)
   for idx, rows_to_remove in enumerate(row_groups):
-    train_data = numpy.delete(D_tr[0], rows_to_remove, axis=0)
-    test_data = D_tr[0][rows_to_remove]
+    train_data = (numpy.delete(D_tr[0], rows_to_remove, axis=0),
+                  numpy.delete(D_tr[1], rows_to_remove, axis=0))
+    test_data = (D_tr[0][rows_to_remove], D_tr[1][rows_to_remove])
     opt.fit(train_data, test_data)
-
-  for i in range(0, D_tr[0].shape[0], K):
-    opt.fit(D_tr[0][0:i] + D_tr[0][i+K:], D_tr[0][i])
-  pass
 else:
   print( 'Invalid validation strategy.' )
   sys.exit( 1 )

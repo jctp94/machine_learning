@@ -73,8 +73,10 @@ class Logistic( Linear ):
     z = self( X )
     zi = numpy.where( y == 0 )[ 0 ]
     oi = numpy.where( y == 1 )[ 0 ]
-    J  = numpy.log( float( 1 ) - z[ zi , : ] + self.m_Epsilon ).mean( )
-    J += numpy.log( z[ oi , : ] + self.m_Epsilon ).mean( )
+    zi_value = z[ zi , : ] if zi.shape[0]>0 else 0
+    oi_value = z[ oi , : ] if oi.shape[0]>0 else 0
+    J  = numpy.log( float( 1 ) - zi_value + self.m_Epsilon ).mean( )
+    J += numpy.log( oi_value + self.m_Epsilon ).mean( )
     return -J
   # end def
 
